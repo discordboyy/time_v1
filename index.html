@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clock UTC+2</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<canvas id="c" width="1200" height="1200"></canvas>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+
+function resize() {
+    const size = Math.min(window.innerWidth, window.innerHeight) * 0.95;
+    const dpr = Math.max(window.devicePixelRatio, 2);
+
+    canvas.style.width = `${size}px`;
+    canvas.style.height = `${size}px`;
+
+    canvas.width = size * dpr;
+    canvas.height = size * dpr;
+
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+window.addEventListener('resize', resize);
+resize();
+
+function getUTC2() {
+    const d = new Date(Date.now() + 2 * 60 * 60 * 1000);
+
+    return {
+        h: d.getUTCHours() % 12,
+        m: d.getUTCMinutes(),
+        s: d.getUTCSeconds(),
+        ms: d.getUTCMilliseconds()
+    };
+}
+
+function drawHand(cx, cy, angle, length, width, color, tailLen = 0) {
+    ctx.save();
+
+    ctx.translate(cx, cy);
+    ctx.rotate(angle);
+
+    ctx.lineCap = 'butt';
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+
+    ctx.beginPath();
+    ctx.moveTo(-tailLen, 0);
+    ctx.lineTo(length, 0);
+    ctx.stroke();
+
+    ctx.restore();
+}
+
+function draw() {
+    const W = parseFloat(canvas.style.width);
+    const H = parseFloat(canvas.style.height);
+
+    const cx = W / 2;
+    const cy = H / 2;
+
+    const R = Math.min(W, H) / 2 - 20;
+
+    ctx.clearRect(0, 0, W, H);
+
+    const { h, m, s, ms } = getUTC2();
+
+    const secFrac = s + ms / 1000;
+    const minFrac = m + secFrac / 60;
+    const hourFrac = h + minFrac / 60;
+
+    const secAngle = (secFrac / 60) * Math.PI * 2 - Math.PI / 2;
+    const minAngle = (minFrac / 60) * Math.PI * 2 - Math.PI / 2;
+    const hourAngle = (hourFrac / 12) * Math.PI * 2 - Math.PI / 2;
+
+    drawHand(cx, cy, hourAngle, R * 0.48, R * 0.045, '#111', R * 0.10);
+    drawHand(cx, cy, minAngle,  R * 0.68, R * 0.030, '#999', R * 0.08);
+    drawHand(cx, cy, secAngle,  R * 0.74, Math.max(2, R * 0.008), '#c0392b', R * 0.18);
+
+    const sq = R * 0.05;
+
+    ctx.fillStyle = '#c9a0c4';
+    ctx.fillRect(cx - sq / 2, cy - sq / 2, sq, sq);
+
+    requestAnimationFrame(draw);
+}
+
+draw();
+</script>
+
+</body>
+</html>
